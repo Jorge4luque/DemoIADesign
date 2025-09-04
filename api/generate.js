@@ -196,10 +196,11 @@ async function handlePlacementRequest(ai, originalImage, objectImage, userPrompt
 - **Background Scene (Image 1):** A square image with the original photo centered in black padding. A bright cyan circle has been added to this image. This is NOT part of the photo; it is a **temporary, visual instruction marker**.
 - **Object (Image 2):** The object to be placed into the scene.
 - **User Request:** "${userPrompt}"
+- **Target Location:** The cyan marker is located at coordinates (${hotspot.x}, ${hotspot.y}) in the square image.
 
 **ABSOLUTE, CRITICAL INSTRUCTIONS:**
 1.  **PRIMARY OBJECTIVE: REPLACE THE MARKER.** Your main goal is to replace the bright cyan marker in Image 1 with the object from Image 2. The final image MUST NOT contain the cyan marker. You must paint over it completely.
-2.  **LOCATION IS NON-NEGOTIABLE.** Place the object exactly where the cyan marker is located. Do not use your own judgment to move the object to a "better" spot. The marker's position is the absolute and final target.
+2.  **LOCATION IS NON-NEGOTIABLE.** Place the object exactly where the cyan marker is located at coordinates (${hotspot.x}, ${hotspot.y}). Do not use your own judgment to move the object to a "better" spot. The marker's position is the absolute and final target.
 3.  **PRESERVE PADDING.** The black bars around the central photo are padding and MUST remain completely untouched. Your output must be a square image with the exact same black padding.
 4.  **SEAMLESS INTEGRATION.** Realistically integrate the object according to the user's request. This includes adjusting its lighting, shadows, scale, and perspective to perfectly match the background scene. If the provided object image has its own background, you must remove it.
 
