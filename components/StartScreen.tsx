@@ -4,13 +4,14 @@
 */
 
 import React, { useState } from 'react';
-import { UploadIcon, MagicWandIcon, PaletteIcon, SunIcon } from './icons';
+import { UploadIcon, MagicWandIcon, PaletteIcon, SunIcon, GridIcon } from './icons';
 
 interface StartScreenProps {
   onFileSelect: (files: FileList | null) => void;
+  onSelectGridMode: () => void;
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onFileSelect }) => {
+const StartScreen: React.FC<StartScreenProps> = ({ onFileSelect, onSelectGridMode }) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,10 +38,16 @@ const StartScreen: React.FC<StartScreenProps> = ({ onFileSelect }) => {
         </p>
 
         <div className="mt-6 flex flex-col items-center gap-4">
-            <label htmlFor="image-upload-start" className="relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-blue-600 rounded-full cursor-pointer group hover:bg-blue-500 transition-colors">
-                <UploadIcon className="w-6 h-6 mr-3 transition-transform duration-500 ease-in-out group-hover:rotate-[360deg] group-hover:scale-110" />
-                Upload an Image
-            </label>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <label htmlFor="image-upload-start" className="relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-blue-600 rounded-full cursor-pointer group hover:bg-blue-500 transition-colors">
+                  <UploadIcon className="w-6 h-6 mr-3 transition-transform duration-500 ease-in-out group-hover:rotate-[360deg] group-hover:scale-110" />
+                  Upload an Image
+              </label>
+              <button onClick={onSelectGridMode} className="relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-gray-200 bg-white/10 rounded-full cursor-pointer group hover:bg-white/20 transition-colors border border-gray-600">
+                  <GridIcon className="w-6 h-6 mr-3 transition-transform duration-300 group-hover:scale-110" />
+                  Grid Combine
+              </button>
+            </div>
             <input id="image-upload-start" type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
             <p className="text-sm text-gray-500">or drag and drop a file</p>
         </div>
