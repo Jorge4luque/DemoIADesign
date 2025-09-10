@@ -22,7 +22,10 @@ export default async function handler(req, res) {
     hotspot, 
     filterPrompt, 
     adjustmentPrompt, 
-    objectImage 
+    objectImage,
+    images,
+    direction,
+    targetDimensions
   } = req.body;
 
   if (!process.env.GEMINI_API_KEY) {
@@ -45,6 +48,12 @@ export default async function handler(req, res) {
         break;
       case 'placement':
         response = await handlePlacementRequest(ai, originalImage, objectImage, userPrompt, hotspot);
+        break;
+      case 'grid':
+        response = await handleGridRequest(ai, images, userPrompt, targetDimensions);
+        break;
+      case 'expand':
+        response = await handleExpandRequest(ai, originalImage, direction, userPrompt);
         break;
       default:
         return res.status(400).json({ error: 'Tipo de operación no válido' });
@@ -218,4 +227,89 @@ async function handlePlacementRequest(ai, originalImage, objectImage, userPrompt
   });
 
   return handleApiResponse(response, 'placement');
+}
+
+// Función para manejar generación de grid
+async function handleGridRequest(ai, images, userPrompt, targetDimensions) {
+  const imageParts = images.map(img => base64ToPart(img, 'image/png'));
+  
+  let prompt;
+  if (targetDimensions) {
+    const { width, height } = targetDimensions;
+    prompt = `You are a visionary creative AI. Your task is to synthesize a single, new, photorealistic image by creatively integrating elements from a set of provided images, guided by a user's prompt and a specific output aspect ratio.
+
+**INPUTS:**
+- **Multiple Images:** A collection of images providing objects, styles, textures, or color palettes.
+- **User Request:** "${userPrompt}"
+
+**CRITICAL INSTRUCTIONS:**
+1.  **CREATE ONE COHESIVE SCENE:** Generate a single, unified, photorealistic scene. Do NOT create a collage or a grid.
+2.  **INTEGRATE ELEMENTS:** Seamlessly integrate key elements from ALL provided images into the new scene, according to the user's prompt.
+3.  **STRICT OUTPUT FORMAT & ASPECT RATIO:** This is the most important rule.
+    - Your final output image MUST have a transparent background.
+    - The scene you generate MUST completely fill a rectangle with an aspect ratio of ${width}:${height}.
+    - The generated content MUST touch all four edges of its designated ${width}:${height} container. There should be ZERO internal padding or borders.
+4.  **ADHERE TO THE PROMPT:** The final scene must be a direct realization of the user's request.
+
+**OUTPUT:**
+- Return ONLY the final, generated image of the scene with a transparent background.
+- Do not output any text, explanations, or apologies.`;
+  } else {
+    prompt = `You are a visionary creative AI. Your task is to synthesize a single, new, photorealistic image by creatively integrating elements from a set of provided images, guided by a user's prompt.
+
+**INPUTS:**
+- **Multiple Images:** A collection of images providing objects, people, styles, textures, or color palettes. These are the building blocks for your creation.
+- **User Request:** "${userPrompt}"
+
+**CRITICAL INSTRUCTIONS:**
+1.  **CREATE ONE COHESIVE SCENE:** Your primary goal is to generate a single, unified, photorealistic scene. Do NOT create a collage, a grid, or a series of separate images. The output must look like a single, believable photograph.
+2.  **INTEGRATE ALL ELEMENTS:** Seamlessly integrate the key subjects, objects, and styles from ALL the provided images into the new scene. If an image contains an object with a background, you must extract the object and place it naturally within the new context.
+3.  **ADHERE TO THE PROMPT:** The final scene must be a direct realization of the user's request.
+4.  **SQUARE OUTPUT:** The final generated image must be a square (1:1 aspect ratio).
+
+**OUTPUT:**
+- Return ONLY the final, generated, square image of the scene.
+- Do not output any text, explanations, or apologies.`;
+  }
+
+  const textPart = { text: prompt };
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-image-preview',
+    contents: { parts: [...imageParts, textPart] },
+    config: {
+      responseModalities: [Modality.IMAGE, Modality.TEXT],
+    },
+  });
+
+  return handleApiResponse(response, 'grid generation');
+}
+
+// Función para manejar expansión de imágenes
+async function handleExpandRequest(ai, originalImage, direction, userPrompt) {
+  const imagePart = base64ToPart(originalImage, 'image/png');
+  
+  const prompt = `You are a visionary photo editing AI. The user has provided an image that needs to be expanded in a specific direction.
+
+**User Guidance:** "${userPrompt || 'Continue the scene naturally.'}"
+
+**CRITICAL INSTRUCTIONS:**
+1.  **EXPAND IN DIRECTION:** Expand the image to the ${direction} by generating new, photorealistic content that seamlessly continues the existing scene.
+2.  **SEAMLESS BLEND:** The generated content must perfectly and seamlessly blend with the edge of the existing photograph in terms of lighting, texture, color, perspective, and subject matter.
+3.  **DO NOT MODIFY EXISTING PIXELS:** You MUST preserve the original part of the image. Do not alter, re-render, or adjust it in any way.
+4.  **MAINTAIN QUALITY:** The expanded content must be of the same quality and style as the original image.
+
+**OUTPUT:**
+- Return ONLY the final, expanded image.
+- Do not return any text, explanations, or apologies.`;
+
+  const textPart = { text: prompt };
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-image-preview',
+    contents: { parts: [imagePart, textPart] },
+    config: {
+      responseModalities: [Modality.IMAGE, Modality.TEXT],
+    },
+  });
+
+  return handleApiResponse(response, 'expansion');
 }
